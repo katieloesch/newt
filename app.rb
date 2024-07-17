@@ -5,7 +5,6 @@ require 'json'
 require 'httparty'
 require 'uri'
 
-
 set :port, 9292
 
 # initializes cache to avoid repeated queries for same requests
@@ -67,23 +66,48 @@ def get_films_by_actor(actor_name)
   result['results']['bindings'].map { |binding| binding['filmName']['value'] }
 end
 
-# test if make_query is working
-# test_query = <<-SPARQL
-# SELECT ?film WHERE {
-#   ?film rdf:type dbo:Film .
-#   ?film dbo:starring dbr:Sigourney_Weaver .
-# }
-# SPARQL
+# GET: actors by film
+def get_actors_by_film(film_name)
+  sparql_query = <<-SPARQL
+  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  PREFIX dbo: <http://dbpedia.org/ontology/>
+  SELECT DISTINCT ?actorName WHERE {
+    ?film rdfs:label ?filmLabel .
+    ?film dbo:starring ?actor .
+    ?actor rdfs:label ?actorName .
+    FILTER (lang(?actorName) = "en" && contains(?filmLabel, "#{film_name}"))
+  }
+  SPARQL
 
-# test_result = make_query(test_query)
-# p JSON.pretty_generate(test_result)
+  result = make_query(sparql_query)
+  actor_names = result['results']['bindings'].map { |binding| binding['actorName']['value'] }
+  unique_actor_names = actor_names.uniq
+  unique_actor_names
+end
 
-
-# test if get_films_by_actor is working
-actor_name = "Sigourney Weaver"
-films = get_films_by_actor(actor_name)
-puts films
-
+#route for the root URL
 get '/' do
-  'hello world'
+  content_type :json
+  if params['actor']
+    actor = params['actor']
+    if $cache[actor]
+      return $cache[actor].to_json
+    else
+      films = get_films_by_actor(actor)
+      $cache[actor] = { films: films }
+      return { films: films }.to_json
+    end
+  elsif params['film']
+    film = params['film']
+    if $cache[film]
+      return $cache[film].to_json
+    else
+      actors = get_actors_by_film(film)
+      $cache[film] = { actors: actors }
+      return { actors: actors }.to_json
+    end
+  else
+    status 400
+    return { error: 'Please provide either an actor or a film parameter' }.to_json
+  end
 end
