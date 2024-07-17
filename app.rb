@@ -49,17 +49,40 @@ rescue JSON::ParserError => e
   {}
 end
 
+
+# GET: films by actor
+def get_films_by_actor(actor_name)
+  sparql_query = <<-SPARQL
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX dbpprop: <http://dbpedia.org/property/>
+    SELECT ?filmName WHERE {
+      ?film dbpprop:starring ?actor .
+      ?actor rdfs:label "#{actor_name}"@en .
+      ?film rdfs:label ?filmName .
+      FILTER (lang(?filmName) = "en")
+    }
+  SPARQL
+
+  result = make_query(sparql_query)
+  result['results']['bindings'].map { |binding| binding['filmName']['value'] }
+end
+
 # test if make_query is working
-test_query = <<-SPARQL
-SELECT ?film WHERE {
-  ?film rdf:type dbo:Film .
-  ?film dbo:starring dbr:Sigourney_Weaver .
-}
-SPARQL
+# test_query = <<-SPARQL
+# SELECT ?film WHERE {
+#   ?film rdf:type dbo:Film .
+#   ?film dbo:starring dbr:Sigourney_Weaver .
+# }
+# SPARQL
 
-test_result = make_query(test_query)
-p JSON.pretty_generate(test_result)
+# test_result = make_query(test_query)
+# p JSON.pretty_generate(test_result)
 
+
+# test if get_films_by_actor is working
+actor_name = "Sigourney Weaver"
+films = get_films_by_actor(actor_name)
+puts films
 
 get '/' do
   'hello world'
