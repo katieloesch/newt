@@ -2,6 +2,15 @@ GEM
   remote: https://rubygems.org/
   specs:
     base64 (0.2.0)
+    bigdecimal (3.1.8)
+    csv (3.3.0)
+    httparty (0.22.0)
+      csv
+      mini_mime (>= 1.0.0)
+      multi_xml (>= 0.5.2)
+    mini_mime (1.1.5)
+    multi_xml (0.7.1)
+      bigdecimal (~> 3.1)
     mustermann (3.0.0)
       ruby2_keywords (~> 0.0.1)
     rack (3.1.7)
@@ -24,6 +33,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  httparty
   sinatra
 
 BUNDLED WITH
